@@ -3,7 +3,7 @@ title: "Cloud ComposerのDAGを最適化するTips"
 emoji: "✨"
 type: "idea" # tech: 技術記事 / idea: アイデア
 topics: ["ariflow","googlecloud","composer"]
-published: false
+published: true
 ---
 
 [Cloud Composer 最適化ガイド（公式）](https://cloud.google.com/blog/ja/products/data-analytics/optimize-cloud-composer-via-better-airflow-dags/) を一読したんで、下記に整理します。
