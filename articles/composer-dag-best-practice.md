@@ -2,7 +2,7 @@
 title: "Cloud ComposerのDAGを最適化するTips"
 emoji: "✨"
 type: "idea" # tech: 技術記事 / idea: アイデア
-topics: ["ariflow"]
+topics: ["ariflow","googlecloud","composer"]
 published: false
 ---
 
@@ -61,13 +61,14 @@ class CustomOperator(BaseOperator):
 ### 6. Pythonパッケージを使って整理する
 - 再利用可能なコードは別パッケージ化する。
 
+```
 dags/
 ├── common_package/  # 再利用可能な処理を入れるディレクトリ
 │   ├── __init__.py
 │   ├── data_utils.py
 │   └── data_queries.py
 └── daily_sales_report.py # common_packageの処理を呼び出す
-
+``` 
 
 ### 7. Airflow Variablesで環境変数を管理する
 ```python
@@ -76,14 +77,19 @@ db_url = Variable.get("DATABASE_URL")
 ```
 
 ### 8. Sensorの間隔調整する
-- ポーリング頻度(*)を調整して無駄な負荷を減らす。
+- ポーリング頻度を調整して無駄な負荷を減らす。
+
+:::message
+ Airflowでは、DAGの中で「他のDAGの処理が完了するのを待つ」タスクとして Sensor（センサー） があります。このSensorが、指定した間隔で外部の状態をチェックするための頻度を「ポーリング頻度」といいます。
+:::
+
+
 ```python
 sensor = ExternalTaskSensor(
     poke_interval=300
 )
 ```
 
-(*) Airflowでは、DAGの中で「他のDAGの処理が完了するのを待つ」タスクとして Sensor（センサー） があります。このSensorが、指定した間隔で外部の状態をチェックするための頻度を「ポーリング頻度」といいます。
 
 ### 9. DAGのタスクを並列実行可能にする
 - DAGの依存関係を整理して並列化。
@@ -177,7 +183,7 @@ default_args = {"owner": "data_team"}
 ```
 
 ### 16. トリガールールを活用する
-- タスクの実行条件を細かく制御。
+
 ```python
 trigger_rule='all_done'
 ```
@@ -204,3 +210,8 @@ logging.info("Start processing: %s", execution_date)
 dag = DAG(tags=['sales', 'daily'])
 ```
 
+# おわりに
+
+Cloud Composerを活用することで、データ処理の自動化を実現できます。
+しかし、適切な設定を行わないと、パフォーマンス低下や運用負担の増加につながります。
+本記事で紹介したTipsを取り入れることで、パフォーマンス向上や運用負担の軽減していきましょう。
