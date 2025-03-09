@@ -1,41 +1,279 @@
 ---
-title: ""
+title: "Google Cloudデータ基盤におけるTerraformのベストプラクティス"
 emoji: "📝"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: []
-published: false
+topics: ["googlecloud","terraform"]
+published: true
 ---
 
-1. コードの構造化
-	•	モジュールの活用: 共通するリソースや設定はモジュールとして分離し、再利用性を高めます。
-	•	環境ごとの分離: 開発、ステージング、本番環境など、各環境ごとにディレクトリやワークスペースを分け、設定を管理します。
-	•	ファイルの分割: 変数定義、リソース定義、出力など、役割ごとにファイルを分けることで、コードの可読性と管理性を向上させます。
+# 想定読者
 
-2. 命名規則
-	•	一貫性のある命名: リソース名、変数名、出力名などに一貫した命名規則を適用します。例えば、ハイフン（-）ではなくアンダースコア（_）を使用し、小文字と数字を組み合わせると良いでしょう。  ￼
-	•	リソースタイプの省略: リソース名にリソースタイプを繰り返さないようにします。例えば、aws_route_table リソースを定義する際、resource "aws_route_table" "public" {} のように、リソースタイプを省略した名前を使用します。  ￼
+- Google Cloud でデータ基盤（BigQuery、Cloud Storage、Cloud Composer、IAM、VPC、Cloud Run など）を Terraform で管理するベストプラクティスを知りたい
 
-3. コードスタイリング
-	•	インデントとスペーシング: コード内のインデントやスペースは一貫性を持たせ、可読性を高めます。
-	•	コメントの活用: 複雑なロジックや重要な部分にはコメントを追加し、他の開発者が理解しやすいようにします。
-	•	属性の順序: リソースブロック内の属性は、count や for_each を最初に、tags を最後に配置するなど、一定の順序で記述します。  ￼
+- Terraform を活用することで可搬性・セキュリティ・運用効率の向上させたい。
 
-4. データソースの活用
-	•	外部データの取得: データソースを使用して、既存のリソースや外部システムから情報を取得し、動的な設定を可能にします。 ￼
-	•	リモートステートの参照: terraform_remote_state を利用して、他の Terraform 設定の状態を参照し、モジュール間の連携を図ります。
+## Terraformのコード構造とコードスタイルの統一
 
-5. 状態管理
-	•	リモートバックエンドの使用: Terraform の状態ファイル（state）はリモートの安全な場所（例：S3、Terraform Cloud）に保存し、チームでの共有やバックアップを容易にします。 ￼
-	•	状態のロック: 同時に複数のユーザーが状態を変更しないよう、状態ファイルのロック機能を活用します。
+### フォルダ構成
 
-6. バージョン管理
-	•	プロバイダーとモジュールのバージョン固定: プロバイダーやモジュールのバージョンを明示的に指定し、予期しない変更や互換性の問題を防ぎます。
-	•	コードのバージョン管理: Git などのバージョン管理システムを使用して、Terraform コードの変更履歴を追跡します。
+Terraform のプロジェクトは、以下のように**リソースごとに分割**すると管理しやすい。
 
-7. テストと検証
-	•	計画の確認: terraform plan コマンドを使用して、適用前に変更内容を確認します。
-	•	自動テストの導入: terraform validate や terratest などのツールを活用し、コードの検証やテストを自動化します。
+```
+terraform/
+├── modules/              # 再利用可能なモジュール
+│   ├── vpc/
+│   ├── bigquery/
+│   ├── storage/
+├── environments/
+│   ├── prod/             # 本番環境のTerraformコード
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   ├── terraform.tfvars
+```
 
-8. セキュリティの考慮
-	•	機密情報の管理: パスワードや API キーなどの機密情報は、環境変数や秘密管理ツールを使用して安全に取り扱います。
-	•	最小権限の原則: リソースやユーザーには必要最低限の権限のみを付与し、セキュリティリスクを低減します。
+
+### **各ファイルの役割**
+| ファイル | 役割 |
+|---------|------|
+| `main.tf` | リソース定義（例：BigQueryのデータセット、VPC） |
+| `variables.tf` | 変数の定義 |
+| `terraform.tfvars` | 変数の値（環境ごとに設定） |
+| `outputs.tf` | Terraformの実行結果（例：BigQueryのデータセットID） |
+
+---
+
+## モジュールの実装例
+```tf:modules/bigquery/main.tf
+resource "google_bigquery_dataset" "this" {
+  dataset_id = var.dataset_id
+  project    = var.project_id
+  location   = var.location
+}
+```
+
+## モジュールの利用例
+```tf:environments/prod/main.tf
+module "bigquery" {
+  source     = "../../modules/bigquery"
+  dataset_id = "analytics"
+  project_id = "my-gcp-project"
+  location   = "US"
+}
+```
+
+# Terraformの状態管理
+
+Terraform のステートファイルは、Google Cloud Storage（GCS）に保存することで、下記メリットを享受できる。
+
+- チームでの Terraform 管理が容易（ローカルの変更が他のメンバーと競合しない）
+- バックアップ可能（GCS のバージョニング機能で過去の状態を復元できる）
+
+## ステートファイルの GCS バックエンド実装
+
+```tf
+terraform {
+  backend "gcs" {
+    bucket = "my-terraform-state"
+    prefix = "prod/state"
+  }
+}
+```
+
+# IAMの最小権限の原則
+
+Terraform で IAM ポリシーを管理する際は、必要最小限の権限を付与することで、セキュリティリスクを減らす。
+またパスワードや API キーなどの機密情報は、環境変数や秘密管理ツールを使用して安全に取り扱う。
+
+## IAM ポリシーの設定例
+```tf
+resource "google_project_iam_member" "bq_reader" {
+  project = var.project_id
+  role    = "roles/bigquery.dataViewer"
+  member  = "user:analyst@example.com"
+}
+```
+
+## 推奨するIAM管理のポイント
+- サービスアカウントごとに権限を細かく分ける
+- roles/editor や roles/owner を乱用しない
+
+# CI/CDパイプラインの活用
+
+Terraform の変更を手作業で適用しない。
+GitHubActions などえ、CI/CD 自動化することで、ミスを防ぎ、安全性を向上できる。
+
+## CI/CD実装例
+```yml
+name: Terraform CI/CD
+
+on:
+  pull_request:
+    branches:
+      - main
+
+defaults:
+  run:
+    working-directory: ${{ env.tf_actions_working_dir }}
+
+permissions:
+  pull-requests: write
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    env:
+      tf_actions_working_dir: ./terraform  # 必要に応じて作業ディレクトリを指定
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.11.1  # 必要に応じてTerraformのバージョンを指定
+
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - name: Post Plan Comment
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: ${{ steps.plan.outputs.stdout }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Terraform Format and Style');
+            });
+
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+
+            \`\`\`
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+
+            </details>
+
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output,
+              });
+            }
+```
+
+## GitHubActions解説
+
+| **設定項目** | **説明** |
+|--------------|----------------------------------|
+| `terraform_version` | 必要に応じて、特定の Terraform バージョンを指定 |
+| `working-directory` | `defaults` セクションで作業ディレクトリを指定し、各ステップでのディレクトリ指定を省略 |
+| `continue-on-error: true` | `terraform fmt` と `terraform plan` ステップでエラーが発生しても、ワークフロー全体を停止せずに続行 |
+| `Post Plan Comment` | `actions/github-script@v7` を使用して、Pull Request に Terraform の実行結果をコメント投稿 |
+
+# BigQueryのコスト最適化
+
+## パーティション分割し、無駄なデータスキャンを防ぐ
+```tf
+resource "google_bigquery_table" "events" {
+  dataset_id = "analytics"
+  table_id   = "events"
+
+  time_partitioning {
+    type = "DAY"
+  }
+}
+```
+
+## 不要なデータを自動削除する
+```tf
+resource "google_bigquery_table" "logs" {
+  dataset_id = "system_logs"
+  table_id   = "audit_logs"
+
+  time_partitioning {
+    type           = "DAY"
+    expiration_ms  = 7776000000 # 90日後に削除
+  }
+}
+```
+
+# Cloud Storageのコスト削減
+## Coldline/Nearline へ自動移行
+
+```tf
+resource "google_storage_bucket_lifecycle_rule" "archive" {
+  condition {
+    age = 90
+  }
+  action {
+    type = "SetStorageClass"
+    storage_class = "COLDLINE"
+  }
+}
+```
+
+# まとめ
+| **項目** | **ベストプラクティス** | **詳細説明** |
+|----------|------------------|------------------|
+| **コード構造** | リソースごとに明確に分割 | Terraform のコードを `modules/` と `environments/` に分け、メンテナンスしやすい構成にする |
+| **モジュール活用** | BigQuery、IAM、VPC などをモジュール化 | 再利用可能なモジュールを作成し、環境ごとの差異を最小限に抑える |
+| **ステート管理** | **GCS** で保存 | Terraform の状態管理を GCS に集約し、チームで一貫した開発・運用を可能にする |
+| **IAM管理** | **最小権限の原則** を適用 | IAM のロールを細かく分け、`roles/editor` などの過剰な権限付与を避ける |
+| **CI/CD** | **Pull Request経由でTerraform適用** | GitHub Actions を利用し、Terraform の `plan` 結果を PR に自動コメントしてレビューしやすくする |
+| **コスト最適化** | **BigQueryのパーティション管理、Cloud Storageのライフサイクルルール** | BigQuery のパーティションを利用し、不要なデータスキャンを防ぐ。Cloud Storage のライフサイクルルールを設定し、不要データを Coldline/Nearline に移行する |
+
+
+# 参考文献
+
+- https://www.terraform-best-practices.com/
+- https://developer.hashicorp.com/terraform/cloud-docs/recommended-practices/
+- https://cloud.google.com/docs/terraform/best-practices/general-style-structure/
+- https://github.com/hashicorp/setup-terraform
