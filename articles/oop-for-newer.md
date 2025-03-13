@@ -3,7 +3,7 @@ title: "(初心者向け)Pythonで学ぶオブジェクト指向プログラミ�
 emoji: "😽"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["python","oop","begineer"]
-published: false
+published: true
 ---
 
 # オブジェクト指向プログラミング（OOP）とは？
