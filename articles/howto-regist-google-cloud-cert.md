@@ -1,5 +1,5 @@
 ---
-title: "Google Cloud認定資格を受験したい"
+title: "Google Cloud認定試験を申し込みたい"
 emoji: "🐈"
 type: "tech"
 topics: ["GoogleCloud", "資格", "キャリア"]
