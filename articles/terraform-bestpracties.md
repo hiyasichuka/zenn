@@ -32,7 +32,6 @@ terraform/
 │   │   ├── terraform.tfvars
 ```
 
-
 ### **各ファイルの役割**
 | ファイル | 役割 |
 |---------|------|
@@ -83,7 +82,7 @@ terraform {
 # IAMの最小権限の原則
 
 Terraform で IAM ポリシーを管理する際は、必要最小限の権限を付与することで、セキュリティリスクを減らす。
-またパスワードや API キーなどの機密情報は、環境変数や秘密管理ツールを使用して安全に取り扱う。
+またパスワードや API キーなどの機密情報は、環境変数や管理ツールを使用して安全に取り扱う。
 
 ## IAM ポリシーの設定例
 ```tf
@@ -101,7 +100,7 @@ resource "google_project_iam_member" "bq_reader" {
 # CI/CDパイプラインの活用
 
 Terraform の変更を手作業で適用しない。
-GitHubActions などえ、CI/CD 自動化することで、ミスを防ぎ、安全性を向上できる。
+GitHubActions などで、CI/CD 自動化することで、ミスを防ぎ、安全性を向上できる。
 
 ## CI/CD実装例
 ```yml
@@ -216,7 +215,7 @@ jobs:
 | `terraform_version` | 必要に応じて、特定の Terraform バージョンを指定 |
 | `working-directory` | `defaults` セクションで作業ディレクトリを指定し、各ステップでのディレクトリ指定を省略 |
 | `continue-on-error: true` | `terraform fmt` と `terraform plan` ステップでエラーが発生しても、ワークフロー全体を停止せずに続行 |
-| `Post Plan Comment` | `actions/github-script@v7` を使用して、Pull Request に Terraform の実行結果をコメント投稿 |
+| `Post Plan Comment` | `actions/github-script@v7` を使用して、Pull Request に terraform planの結果をコメント投稿 |
 
 # BigQueryのコスト最適化
 
@@ -265,7 +264,7 @@ resource "google_storage_bucket_lifecycle_rule" "archive" {
 |----------|------------------|------------------|
 | **コード構造** | リソースごとに明確に分割 | Terraform のコードを `modules/` と `environments/` に分け、メンテナンスしやすい構成にする |
 | **モジュール活用** | BigQuery、IAM、VPC などをモジュール化 | 再利用可能なモジュールを作成し、環境ごとの差異を最小限に抑える |
-| **ステート管理** | **GCS** で保存 | Terraform の状態管理を GCS に集約し、チームで一貫した開発・運用を可能にする |
+| **ステート管理** | **GCS** で保存 | Terraform の状態管理を GCS に集約し、チームで整合性を担保した開発・運用を可能にする |
 | **IAM管理** | **最小権限の原則** を適用 | IAM のロールを細かく分け、`roles/editor` などの過剰な権限付与を避ける |
 | **CI/CD** | **Pull Request経由でTerraform適用** | GitHub Actions を利用し、Terraform の `plan` 結果を PR に自動コメントしてレビューしやすくする |
 | **コスト最適化** | **BigQueryのパーティション管理、Cloud Storageのライフサイクルルール** | BigQuery のパーティションを利用し、不要なデータスキャンを防ぐ。Cloud Storage のライフサイクルルールを設定し、不要データを Coldline/Nearline に移行する |
