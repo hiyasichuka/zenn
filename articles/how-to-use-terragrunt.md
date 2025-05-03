@@ -9,16 +9,16 @@ published: true
 # はじめに
 
 Terraformを快適に利用するためのラッパーツールのTerragruntを使って、BigQueryのデータセットとテーブルを構築する方法を解説します。
-Terraformのみだと、環境（dev/prodなど）ごとにコードを複製したり、stateファイルの管理が煩雑になる問題に直面することがあります。
+Terraformのみだと、環境（dev/prodなど）ごとにコードを複製したり、stateファイルの管理が煩雑になる問題に直面することがあります。  
 本記事は、それらの問題をTerragruntでどのように解決するか体感するためのハンズオン記事です。
 
 ---
 
 ## 目標
 
-* GCS（Google Cloud Storage）上でTerraformのstateを管理する
-* dev環境とprod環境で異なるBigQueryデータセット・テーブルを作成する
-* Terragruntを用いてTerraform構成を共通化・再利用可能にする
+- GCS（Google Cloud Storage）上でTerraformのstateを管理する
+- dev環境とprod環境で異なるBigQueryデータセット・テーブルを作成する
+- Terragruntを用いてTerraform構成を共通化・再利用可能にする
 
 ## 前提条件（準備）
 
@@ -73,24 +73,25 @@ infra/
     │   └── terragrunt.hcl           # dev環境の個別設定
     └── prod/
         └── terragrunt.hcl           # prod環境の個別設定
+
 ```
 
 ## TerraformとTerragruntの構成を分ける理由
 
 Terraform(.tf)とTerragrunt(terragrunt.hcl)は、役割が異なるツールです。
 
-| ツール        | 役割                                        |
-| ---------- | ----------------------------------------- |
-| Terraform  | BigQueryデータセット・テーブルなど「何を作るか（リソース定義）」を記述する |
-| Terragrunt | dev/prodなど「どこでどう使うか（環境やステートの管理）」を制御する     |
+| ツール | 役割 |
+|-------|------|
+| Terraform | BigQueryデータセット・テーブルなど「何を作るか（リソース定義）」を記述する |
+| Terragrunt | dev/prodなど「どこでどう使うか（環境やステートの管理）」を制御する |
 
 このように目的が異なるため、**再利用性の高いTerraformコード（モジュール）は `modules/` に集約し、環境ごとの適用構成や変数定義は `environments/` に配置する**という構成を採用しています。これにより、次のような利点があります。
 
-* Terraformモジュールの再利用がしやすくなる（別プロジェクトでも流用可能）
-* dev/prod環境でのstateファイルの混乱を防げる
-* 共通処理（state管理やproject IDなど）を1箇所にまとめられる
-* `terragrunt run-all` で複数環境を一括操作可能
-* 環境固有の一時的なリソースも `environments/` 側で柔軟に管理可能
+- Terraformモジュールの再利用がしやすくなる（別プロジェクトでも流用可能）
+- dev/prod環境でのstateファイルの混乱を防げる
+- 共通処理（state管理やproject IDなど）を1箇所にまとめられる
+- `terragrunt run-all` で複数環境を一括操作可能
+- 環境固有の一時的なリソースも `environments/` 側で柔軟に管理可能
 
 ## モジュール定義（modules/bigquery）
 
@@ -111,6 +112,10 @@ resource "google_bigquery_table" "default" {
   dataset_id = google_bigquery_dataset.default.dataset_id
   table_id   = var.table_id
 
+  depends_on = [
+    google_bigquery_dataset.default
+  ]
+  
   schema = jsonencode([
     {
       name = "id"
@@ -139,6 +144,8 @@ variable "table_id" {
   type        = string
 }
 ```
+
+
 
 ## environments構成
 
@@ -199,7 +206,7 @@ inputs = {
 }
 ```
 
-## find\_in\_parent\_folders() の意味と役割
+## find_in_parent_folders() の意味と役割
 
 Terragruntでは、各環境（dev, prodなど）の `terragrunt.hcl` に以下のような記述があります。
 
@@ -210,7 +217,7 @@ include {
 ```
 
 この `find_in_parent_folders()` は、「親ディレクトリから共通設定の `terragrunt.hcl` を探して取り込む」関数です。
-`environments/dev/terragrunt.hcl` などから、親フォルダを上にたどって `environments/terragrunt.hcl` を見つけ、そこに定義された `locals` や `remote_state` を **自動的に継承**してくれます。したがって、各環境ごとの差分（`inputs`など）だけに着目すればよくなります。
+`envs/dev/terragrunt.hcl` などから、親フォルダを上にたどって `terragrunt/terragrunt.hcl` を見つけ、そこに定義された `locals` や `remote_state` を **自動的に継承**してくれます。したがって、各環境ごとの差分（`inputs`など）だけに着目すればよくなります。
 
 ## GCSバケットの作成（state保存用）
 
@@ -224,12 +231,13 @@ gsutil mb -p my-terragrunt-demo -l us-central1 gs://my-terragrunt-state-bucket
 gsutil ls -r gs://my-terragrunt-state-bucket
 ```
 
+
 ## 適用手順
 
 ### 1. dev環境の初期化と適用
 
 ```bash
-cd environments/dev
+cd terragrunt/envs/dev
 terragrunt init
 terragrunt apply
 ```
@@ -244,28 +252,33 @@ terragrunt apply
 ### 3. 複数環境を一括適用（任意）
 
 ```bash
-cd ..
+cd ../../
 terragrunt run-all apply
 ```
 
 この `run-all` コマンドは、複数のTerragrunt構成を**自動で依存順に**適用する便利な機能です。
 
+
+
 ## Terragruntを使うメリット（特にBigQueryで）
 
-* 環境ごとに重複していたコードを `inputs` で簡潔に切り替えられる
-* GCSへのstate保存を `remote_state` に一元定義できる
-* 複数ディレクトリの管理が `run-all` によって簡素化
-* ディレクトリ構成がそのままstate管理に活かされ、可視性が高い
-* 将来的なデータセット・テーブルの追加にも強い構成
+- 環境ごとに重複していたコードを `inputs` で簡潔に切り替えられる
+- GCSへのstate保存を `remote_state` に一元定義できる
+- 複数ディレクトリの管理が `run-all` によって簡素化
+- ディレクトリ構成がそのままstate管理に活かされ、可視性が高い
+- 将来的なデータセット・テーブルの追加にも強い構成
+
 
 ## クリーンアップ
 
 リソースを削除する場合は以下を実行します。
 
 ```bash
-cd environments
+cd terragrunt
 terragrunt run-all destroy
 ```
+
+
 
 ## まとめ
 
