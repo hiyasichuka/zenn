@@ -62,36 +62,19 @@ export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your-key.json"
 
 ```bash
 infra/
-├── modules/                         # Terraformの再利用可能なモジュール
-│   └── bigquery/                    # BigQueryのモジュール群（dataset, table）
+├── modules/                 # Terraformの再利用可能なモジュール
+│   └── bigquery/            # BigQueryのモジュール群（dataset, table）
 │       ├── dataset.tf
 │       ├── table.tf
 │       └── variables.tf
-└── environments/                    # Terragruntで管理する各環境の構成
-    ├── terragrunt.hcl               # 全環境共通の設定（remote_stateなど）
+└── envs/                    # Terragruntで管理する各環境の構成
+    ├── terragrunt.hcl       # 全環境共通の設定（remote_stateなど）
     └── dev/
-    │   └── terragrunt.hcl           # dev環境の個別設定
+    │   └── terragrunt.hcl   # dev環境の個別設定
     └── prod/
-        └── terragrunt.hcl           # prod環境の個別設定
+        └── terragrunt.hcl   # prod環境の個別設定
 
 ```
-
-## TerraformとTerragruntの構成を分ける理由
-
-Terraform(.tf)とTerragrunt(terragrunt.hcl)は、役割が異なるツールです。
-
-| ツール | 役割 |
-|-------|------|
-| Terraform | BigQueryデータセット・テーブルなど「何を作るか（リソース定義）」を記述する |
-| Terragrunt | dev/prodなど「どこでどう使うか（環境やステートの管理）」を制御する |
-
-このように目的が異なるため、**再利用性の高いTerraformコード（モジュール）は `modules/` に集約し、環境ごとの適用構成や変数定義は `environments/` に配置する**という構成を採用しています。これにより、次のような利点があります。
-
-- Terraformモジュールの再利用がしやすくなる（別プロジェクトでも流用可能）
-- dev/prod環境でのstateファイルの混乱を防げる
-- 共通処理（state管理やproject IDなど）を1箇所にまとめられる
-- `terragrunt run-all` で複数環境を一括操作可能
-- 環境固有の一時的なリソースも `environments/` 側で柔軟に管理可能
 
 ## モジュール定義（modules/bigquery）
 
@@ -147,9 +130,9 @@ variable "table_id" {
 
 
 
-## environments構成
+## envs構成
 
-### environments/terragrunt.hcl（共通設定）
+### envs/terragrunt.hcl（共通設定）
 
 ```hcl
 locals {
@@ -168,7 +151,7 @@ remote_state {
 
 この設定により、Terraformのstateファイルは各環境（dev/prod）ごとにディレクトリ構造に応じてGCSに分離して保存されます。
 
-### environments/dev/terragrunt.hcl
+### envs/dev/terragrunt.hcl
 
 開発環境用のデータセットとテーブルのリソースを定義します。
 
@@ -187,7 +170,7 @@ inputs = {
 }
 ```
 
-### environments/prod/terragrunt.hcl
+### envs/prod/terragrunt.hcl
 
 本番環境用のデータセットとテーブルのリソースを定義します。
 
@@ -216,8 +199,8 @@ include {
 }
 ```
 
-この `find_in_parent_folders()` は、「親ディレクトリから共通設定の `terragrunt.hcl` を探して取り込む」関数です。
-`envs/dev/terragrunt.hcl` などから、親フォルダを上にたどって `terragrunt/terragrunt.hcl` を見つけ、そこに定義された `locals` や `remote_state` を **自動的に継承**してくれます。したがって、各環境ごとの差分（`inputs`など）だけに着目すればよくなります。
+`find_in_parent_folders()` は、「親ディレクトリから `terragrunt.hcl` を探して取り込む」関数です。
+`envs/dev/terragrunt.hcl` などから、親フォルダを上にたどって `terragrunt.hcl` を見つけ、そこに定義された `locals` や `remote_state` を **自動的に継承**してくれます。したがって、各環境ごとの差分（`inputs`など）だけに着目すればよくなります。
 
 ## GCSバケットの作成（state保存用）
 
@@ -278,10 +261,19 @@ cd terragrunt
 terragrunt run-all destroy
 ```
 
-
-
 ## まとめ
 
-Terraform単体で運用する際の「環境ごとの記述の重複」や「手動管理の煩雑さ」といった問題に対して、Terragruntがどのように解決するかを体感してみました。
-インフラ環境・構成の切り替えが多いケースでは、Terragruntは非常に強力なツールです。再利用性と保守性の高い構成を実現するために、今後のプロジェクトでも積極的に活用していきたいですね。
+Terraform単体で運用する場合、以下のツラミがあります。
+
+- dev / prod それぞれに同じような `.tf` ファイルをコピーして管理する必要がある
+- stateファイルの保存場所や命名を毎回個別に設定する必要がある
+- 複数環境の適用作業が煩雑で、適用漏れなど人為ミスのリスクが高まる
+
+Terragruntを導入することで・・・
+
+- モジュール化された `.tf` を `inputs` で切り替えるだけで環境ごとの構成を柔軟に適用できる
+- GCS上でのstate管理を `remote_state` に集約することで、バケット設定などの煩雑さが消える
+- `run-all apply` によって複数環境を一括で適用・削除できるため、運用コストが大幅に下がる
+
+ぜひご自身のプロジェクトでも導入して、メンテナンス性と再利用性の向上を実感してみてください。
 
