@@ -40,6 +40,7 @@ published: true
 -   **Workload Identity**：GKE 上の Kubernetes サービスアカウント (KSA) に Google サービスアカウント (GSA) の権限を付与する仕組み。Pod は KSA を通じて、GCP リソースへ安全にアクセスできる（サービスアカウントキーの管理が不要）。
 -   **NetworkPolicy**：Kubernetes クラスタ内で Pod 間の通信ルールを定義するファイアウォール。Namespace スコープで適用され、デフォルトでは全許可または全拒否から設定を開始する。
 -   **mTLS（相互TLS）**：サービスメッシュ (Istio や Anthos Service Mesh など) を利用して、Pod 間の通信を暗号化し、双方のサービスが互いを認証する仕組み。ゼロトラストセキュリティの実現に貢献。
+-   **限定公開 Google アクセス（Private Google Access）**：外部IPアドレスを持たないVMインスタンスやGKEノードから、Google API およびサービス (Cloud Storage, BigQuery など) へプライベートネットワーク経由でアクセスできるようにするVPCネットワークの機能。
 
 #### スケーラビリティ設計
 
@@ -69,7 +70,6 @@ published: true
 -   **保持ポリシー（Retention Policy）**：バケット内のオブジェクトが指定期間削除・上書きされないようにロックする。コンプライアンス要件（例: WORM - Write Once Read Many）に対応。
 -   **ライフサイクルポリシー**：オブジェクトの経過日数やストレージクラス、バージョン数などに基づいて、オブジェクトのストレージクラス変更や削除を自動化。コスト最適化やデータ管理に有効。
 -   **Cloud Storage FUSE**：Cloud Storage バケットをローカルファイルシステムのようにマウントできるオープンソースドライバ。VM や GKE Pod からファイルとしてアクセス可能だが、パフォーマンス特性（レイテンシ、スループット、一貫性）に注意が必要。
--   **限定公開 Google アクセス（Private Google Access）**：外部IPアドレスを持たないVMインスタンスやGKEノードから、Google API およびサービス (Cloud Storage, BigQuery など) へプライベートネットワーク経由でアクセスできるようにする。
 
 ### 理解チェック
 
@@ -84,23 +84,27 @@ StatefulSet はステートフルアプリケーション (例: データベー�
 #### Q3: Workload Identity を利用する主な利点は何ですか？
 Kubernetes Pod が Google Cloud API にアクセスする際に、サービスアカウントキー (JSON ファイル) を Pod 内に保存・管理する必要がなくなる点です。これにより、キー漏洩のリスクを大幅に削減し、セキュリティを向上させることができます。Kubernetes サービスアカウントと Google サービスアカウントをマッピングすることで、Pod は安全に認証を行えます。
 
-#### Q4: Cloud Storage でデータのコンプライアンス要件 (例: 特定期間のデータ保持義務) を満たすには、どの機能を利用しますか？
+#### Q4: 「限定公開 Google アクセス」はどのようなシナリオで役立ち、どのようなセキュリティ上のメリットがありますか？
+VPC ネットワーク内にあり、外部 IP アドレスを持たない VM インスタンスや GKE ノードから、Google の API やサービス (例: Cloud Storage, BigQuery, Pub/Sub) へインターネットを経由せずにアクセスしたい場合に役立ちます。
+**セキュリティ上のメリット**:
+-   トラフィックが Google のプライベートネットワーク内にとどまるため、インターネットへの露出を避けることができます。
+-   外部IPアドレスが不要なため、攻撃対象領域を削減できます。
+-   VPC Service Controls と組み合わせることで、データ漏洩リスクをさらに低減できます。
+
+#### Q5: Cloud Storage でデータのコンプライアンス要件 (例: 特定期間のデータ保持義務) を満たすには、どの機能を利用しますか？
 バケットに**保持ポリシー (Retention Policy)** を設定します。これにより、指定した期間、オブジェクトの削除や上書きが禁止され、データの不変性が保証されます。これは監査対応や規制遵守に役立ちます。
 
-#### Q5: Cloud Storage FUSE を利用する際の利点と、特に注意すべきパフォーマンス上の考慮事項は何ですか？
+#### Q6: Cloud Storage FUSE を利用する際の利点と、特に注意すべきパフォーマンス上の考慮事項は何ですか？
 **利点**: Cloud Storage バケットを既存のアプリケーションからファイルシステムとして容易に扱えるようになります。
 **注意点**: ローカルディスクと比較してレイテンシが大きく、スループットもネットワーク帯域に依存します。頻繁な小さいファイルの読み書きや、低レイテンシを要求するワークロードには不向きな場合があります。キャッシュ設定やアクセスパターンを工夫する必要があります。
-
-#### Q6: 「限定公開 Google アクセス」はどのようなシナリオで役立ちますか？
-VPC ネットワーク内にあり、外部 IP アドレスを持たない VM インスタンスや GKE ノードから、Google の API やサービス (例: Cloud Storage, BigQuery, Pub/Sub) へインターネットを経由せずにアクセスしたい場合に役立ちます。これにより、セキュリティを強化し、NAT ゲートウェイなどのコストを削減できる可能性があります。
 
 ---
 
 ※ 参考文献
 -   [Professional Cloud Developer 認定ガイド（Google Cloud）](https://cloud.google.com/learn/certification/guides/cloud-developer?hl=ja)
 -   [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity?hl=ja)
--   [Cloud Storage FUSE](https://cloud.google.com/storage/docs/gcs-fuse?hl=ja)
 -   [限定公開の Google アクセス](https://cloud.google.com/vpc/docs/private-google-access?hl=ja)
+-   [Cloud Storage FUSE](https://cloud.google.com/storage/docs/gcs-fuse?hl=ja)
 
 ---
 
