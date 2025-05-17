@@ -1,43 +1,17 @@
 name: reviewdog
-
 on: [pull_request]
-
 jobs:
   textlint:
     name: runner / textlint
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
         with:
           submodules: true
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: '18'
-
-      # Run textlint with the GitHub PR Check reporter to annotate issues directly on the pull request.
-      - name: Run textlint (GitHub PR Check)
-        uses: tsuyoshicho/action-textlint@v3
-        with:
-          github_token: ${{ secrets.github_token }}
-          reporter: github-pr-check
-          textlint_flags: "articles/**"
-
-      # Run textlint with the GitHub Check reporter to provide a summary of issues in the checks tab.
-      - name: Run textlint (GitHub Check)
-        uses: tsuyoshicho/action-textlint@v3
-        with:
-          github_token: ${{ secrets.github_token }}
-          reporter: github-check
-          textlint_flags: "articles/**"
-
-      # Run textlint with the GitHub PR Review reporter to leave comments on the pull request for each issue.
-      - name: Run textlint (GitHub PR Review)
-        uses: tsuyoshicho/action-textlint@v3
+      - name: textlint-github-pr-review
+        uses: tsuyoshicho/action-textlint@v3.9.3
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review
+          level: warning
           textlint_flags: "articles/**"
