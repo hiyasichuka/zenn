@@ -34,10 +34,10 @@ Google Cloud の認定資格「[Professional Cloud Developer](https://cloud.goog
 |------|--------------|
 | 公式ガイド | [Professional Cloud Developer ガイド](https://cloud.google.com/learn/certification/cloud-developer?hl=ja) |
 | 模擬試験 | 上記の公式ガイド参照 |
-| 無料問題集（100題） | [Note記事](https://note.com/aws_shikaku/n/n2e26a3e500a7) |
-| 問題演習1 | [CertsTime サンプル問題](https://www.certstime.com/questions/google/professional-cloud-developer-exam) |
-| 問題演習2 | [LeetQuiz 練習問題](https://leetquiz.com/certificate/google-professional-cloud-developer/practice) |
-| 海外試験共有サイト | [ExamTopics](https://www.examtopics.com/exams/google/professional-cloud-developer/) |
+| 無料問題集 | [Note記事](https://note.com/aws_shikaku/n/n2e26a3e500a7) |
+| 無料問題集 | [CertsTime サンプル問題](https://www.certstime.com/questions/google/professional-cloud-developer-exam) |
+| 無料問題集 | [LeetQuiz 練習問題](https://leetquiz.com/certificate/google-professional-cloud-developer/practice) |
+| 無料問題集 | [ExamTopics](https://www.examtopics.com/exams/google/professional-cloud-developer/) |
 | キュレーションメモ | [Zenn](https://zenn.dev/takaha4k/articles/pcd-cert-memo) |
 
 
