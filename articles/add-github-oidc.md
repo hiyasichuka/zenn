@@ -1,5 +1,5 @@
 ---
-title: "GitHub ActionsからGCPを操作するため、OIDC認証をTerraformで構築する"
+title: "GitHub ActionsからGCPを操作するためのOIDC認証をTerraformで構築する"
 emoji: "🌟"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["gcp","oidc","actions","terraform"]
@@ -11,8 +11,7 @@ published: true
 
 GitHub ActionsからGoogle Cloudリソースを安全に操作するためには、**OIDC（OpenID Connect）によるWorkload Identity Federation**の構成が推奨されています。
 
-本記事では、**TerraformでOIDCの関連リソース作成して、実際に構成する方法**を紹介します。
-
+本記事では、TerraformでOIDC関連リソースを構築し、GitHub Actionsから安全にGCPへアクセスする方法を紹介します。
 
 ## なぜOIDC認証？
 
@@ -38,7 +37,7 @@ GCPにおけるWorkload Identity Federationは、外部サービス（GitHub、A
 
 **Workload Identity Pool Provider**
 
-- 実際にどのIDプロバイダーを使うか（今回はGitHub）を定義するエンティティ
+- 実際にどのIDプロバイダー（今回はGitHub）からの認証を許可するかを定義するエンティティ
 - issuer_uri（認証元）や属性マッピング（assertionのどの項目を使うか）などを設定
 
 これらを組み合わせることで、「GitHub ActionsのOIDCトークンなら、GCP上のこのサービスアカウントになりすませる」という設定が実現できます。
@@ -127,14 +126,12 @@ resource "google_service_account_iam_member" "github_bind" {
 
 ## ポイントまとめ
 
-| 項目               | 内容                                |
-| - | -  |
-| 鍵レス認証            | サービスアカウントキー不要で安全      |
-| Terraform管理      | インフラコードとして再利用＆一貫性             |
-| リポジトリ制限          | attribute_conditionでアクセス管理       |
-| GitHub Actions連携 | `google-github-actions/auth`で簡単連携 |
-
-
+| 項目                 | 内容                                           |
+|----------------------|------------------------------------------------|
+| 鍵レス認証           | サービスアカウントキー不要で安全             |
+| Terraform管理        | インフラコードとして再利用＆一貫性           |
+| リポジトリ制限       | `attribute_condition` によるアクセス制御     |
+| GitHub Actions連携   | `google-github-actions/auth` による認証設定  |
 
 
 # 参考ドキュメント
