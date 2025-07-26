@@ -45,7 +45,7 @@ Claude Codeを使うには、LLM（Sonnetなど）をデプロイしておく必
 ### 2.2 認証情報の準備
 
 GitHub ActionsからGCPリソース（Vertex AI）へアクセスするには、OIDC経由でService Accountを用いた認証が必要です。（AWSの場合はAssumeRoleの設定が必要）
-今回は、サービスアカウントの作成、権限付与およびアイデンティティプールといったリソース作成は割愛します。（記事でまとめた記憶あるので、あとでリンクはります。）
+今回は、サービスアカウントの作成、権限付与およびアイデンティティプールといったリソース作成は割愛します。詳細な手順については、[こちらの記事](https://zenn.dev/takaha4k/articles/add-github-oidc)をご参照ください。
 
 
 認証用Composite Action(Workflowから呼び出せる部品化したやつ)の例
@@ -69,7 +69,7 @@ runs:
 
 ### 2.3 Workflowの作成 (`.github/workflows/claude.yml`)
 
-`@claude`をトリガーとして起動させるGitHub Actionsの定義例
+`@claude` をトリガーとして起動させるGitHub Actionsの定義例
 
 ```yaml
 name: Claude PR Action
