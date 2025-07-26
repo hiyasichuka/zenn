@@ -39,7 +39,9 @@ Claude Codeを使うには、LLM（Sonnetなど）をデプロイしておく必
 3. 求められる入力項目を埋めて、利用申請（数分で完了）
 
 ![img](/images/enable-vertex-ai-claude.png)
-> 💡モデルは us-east5 リージョンにデフォルトでデプロイされました。
+
+> 💡Claude Sonnet 4 米国のサポートリージョンが、us-east5 のみ
+> https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/claude/sonnet-4?hl=ja
 
 
 ### 2.2 認証情報の準備
