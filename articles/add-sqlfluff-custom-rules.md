@@ -12,12 +12,11 @@ SQL の品質管理において、組織固有のルールを適用したいケ�
 
 ## 背景
 
-SQLFluff は BigQuery をはじめとする様々な SQL クエリに対応したリンター・フォーマッターです。
+SQLFluff は BigQuery をはじめとする様々な SQL に対応したリンター・フォーマッターです。
 標準ルールは充実していますが、独自の SQL ルールを強制したい場合、カスタムルールが必要になります。
 
 ### 実装したカスタムルール
 
-今回は例として以下のルールを実装します
 今回は例として以下のルールを実装します。
 
 **CUSTOM_L001**: `CROSS JOIN` の使用禁止
@@ -44,7 +43,7 @@ sqlfluff-plugins/
             └── custom_l001.yml
 ```
 
-### 見慣れないファイルの説明
+### 構成ファイルの補足
 
 **MANIFEST.in (ファイルの配布設定)**
 
@@ -61,7 +60,7 @@ include src/custom_rules/plugin_default_config.cfg
 
 SQLFluff は [pluggy](https://pluggy.readthedocs.io/) というプラグインシステムを使用しています。`@hookimpl` デコレータを使うことで、「このメソッドは SQLFluff のプラグイン用の実装です」と宣言できます。
 
-主な hook メソッド
+主なフックメソッド
 
 - `get_rules()`: カスタムルールのクラスリストを返す
 - `load_default_config()`: プラグインのデフォルト設定を読み込む
@@ -96,7 +95,7 @@ include src/custom_rules/plugin_default_config.cfg
 
 ### 2. プラグインの hook 実装
 
-`src/custom_rules/__init__.py` で SQLFluff のプラグインシステムに接続します:
+`src/custom_rules/__init__.py` で SQLFluff のプラグインシステムに登録します:
 
 ```python
 """Custom SQLFluff rules plugin."""
@@ -143,7 +142,7 @@ from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
 
 class Rule_CUSTOM_L001(BaseRule):
-  """CROSS JOIN の使用を禁止する。
+    """CROSS JOIN の使用を禁止する。
 
     **アンチパターン**
 
@@ -165,14 +164,14 @@ class Rule_CUSTOM_L001(BaseRule):
     crawl_behaviour = SegmentSeekerCrawler({"from_clause"})
 
     def _eval(self, context: RuleContext) -> Optional[LintResult]:
-    """評価処理。"""
+        """評価処理。"""
         assert context.segment.is_type("from_clause")
 
         raw_upper = context.segment.raw.upper()
         if "CROSS JOIN" in raw_upper:
             return LintResult(
                 anchor=context.segment,
-                description="CROSS JOIN は推奨されません。明示的なJOIN条件を使用してください。",
+                description="CROSS JOIN の使用は推奨されません。明示的な JOIN 条件を使用してください。",
             )
 
         return None
@@ -180,24 +179,23 @@ class Rule_CUSTOM_L001(BaseRule):
 
 ### 4. YAML ベースのテストケース
 
-### 2. ルール命名の失敗例
+`test/rules/test_cases/custom_l001.yml`:
 
-- コード: 正規表現 `[A-Z0-9]{4}` にマッチする英数字 4 文字 (例: `L001`)
-  rule: CUSTOM_L001
+```yaml
+rule: CUSTOM_L001
 
 test_cross_join_fail:
-fail_str: |
-SELECT \*
-FROM table1
-CROSS JOIN table2
+  fail_str: |
+    SELECT *
+    FROM table1
+    CROSS JOIN table2
 
 test_inner_join_pass:
-pass_str: |
-SELECT \*
-FROM table1
-INNER JOIN table2 ON table1.id = table2.id
-
-````
+  pass_str: |
+    SELECT *
+    FROM table1
+    INNER JOIN table2 ON table1.id = table2.id
+```
 
 `test/rules/rule_test_cases_test.py`:
 
@@ -217,7 +215,7 @@ from sqlfluff.utils.testing.rules import load_test_cases
 def test_custom_l001(test_case):
     """Test CUSTOM_L001."""
     test_case.assert_rule_pass_in_sql()
-````
+```
 
 ### 5. GitHub Actions CI 統合
 
@@ -284,7 +282,7 @@ SQLFluff のルール命名規則に従う必要があります:
 
 - クラス名: `Rule_<PREFIX>_<CODE>` (例: `Rule_CUSTOM_L001`)
 - ルール識別子: `<prefix>.<name>` (例: `custom.no_cross_join`)
-- コード: 正規表現 `[A-Z0-9]{4}` にマッチする 4 文字 (例: `L001`)
+- コード: 正規表現 `[A-Z0-9]{4}` にマッチする英数字 4 文字 (例: `L001`)
 
 ### テストの重要性
 
@@ -315,9 +313,9 @@ from sqlfluff.core.rules import BaseRule
 
 `get_configs_info()` hook はカスタム設定が必要な場合のみ実装すればよく、今回は不要でした。
 
-### 2. ルール命名の失敗
+### 2. ルール命名の失敗例
 
-当初 `Rule_CUSTOM_CROSSJOIN` のような命名を試みましたが、正規表現 `Rule_?([A-Z]{1}[a-zA-Z]+)?_([A-Z0-9]{4})` にマッチせずエラーになりました。4 文字コードが必須です。
+当初 `Rule_CUSTOM_CROSSJOIN` のような命名を試みましたが、正規表現 `Rule_?([A-Z]{1}[a-zA-Z]+)?_([A-Z0-9]{4})` にマッチせずエラーになりました。英数字 4 文字のコードが必須です。
 
 ### 3. ワークフローの分離
 
