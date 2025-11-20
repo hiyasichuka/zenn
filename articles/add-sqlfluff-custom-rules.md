@@ -2,13 +2,13 @@
 title: 'SQLFluffカスタムルールの作成とCI統合方法'
 emoji: '📘'
 type: 'tech' # tech: 技術記事 / idea: アイデア
-topics: []
-published: false
+topics: ['BigQuery', 'SQLFluff', 'sql']
+published: true
 ---
 
 ## はじめに
 
-SQL の品質管理において、組織固有のルールを適用したいケースがあります。
+SQL のリンターにおいて、組織固有のルールを強制したいケースがありませんか。
 本記事では、SQLFluff のカスタムルールプラグインを作成し、GitHub Actions CI に統合する方法を解説します。
 
 ## 背景
@@ -18,7 +18,7 @@ SQLFluff は BigQuery をはじめとする様々な SQL に対応したリン�
 
 ### 実装するカスタムルール
 
-今回は `CROSS JOIN` の使用を禁止するルール (CUSTOM_L001) を実装します。
+今回は `CROSS JOIN` の使用を禁止するルールを実装します。
 意図しない全件結合によるパフォーマンス低下を防ぐため、明示的な JOIN 条件の使用を促すルールです。
 
 ## プロジェクト構造
@@ -36,7 +36,7 @@ sqlfluff-plugins/
 └── test/
     └── rules/
         ├── rule_test_cases_test.py   # テスト実行
-        └── test_cases/               # YAMLテストケース
+        └── test_cases/               # テストケース
             └── custom_l001.yml
 ```
 
@@ -65,7 +65,7 @@ SQLFluff は [pluggy](https://pluggy.readthedocs.io/) というプラグイン�
 
 `pyproject.toml` でプラグインのエントリーポイントを定義します。
 
-```toml
+```toml:pyproject.toml
 [project]
 name = "sqlfluff-plugin-custom-rules"
 version = "0.1.0"
@@ -81,7 +81,7 @@ build-backend = "setuptools.build_meta"
 
 `MANIFEST.in` で設定ファイルを配布対象に含めます。
 
-```
+```:MANIFEST.in
 include src/custom_rules/plugin_default_config.cfg
 ```
 
@@ -89,9 +89,7 @@ include src/custom_rules/plugin_default_config.cfg
 
 `src/custom_rules/__init__.py` で SQLFluff のプラグインシステムに登録します。
 
-```python
-"""Custom SQLFluff rules plugin."""
-
+```python:src/custom_rules/__init__.py
 from typing import Any
 
 from sqlfluff.core.config import load_config_resource
@@ -124,9 +122,7 @@ def load_default_config() -> dict[str, Any]:
 
 `src/custom_rules/rules.py` にルールロジックを実装します。
 
-```python
-"""Custom SQLFluff rules."""
-
+```python:src/custom_rules/rules.py
 from typing import Optional
 
 from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
@@ -163,7 +159,7 @@ class Rule_CUSTOM_L001(BaseRule):
         if "CROSS JOIN" in raw_upper:
             return LintResult(
                 anchor=context.segment,
-                description="CROSS JOIN の使用は推奨されません。明示的な JOIN 条件を使用してください。",
+                description="CROSS JOIN を使用しないでください。",
             )
 
         return None
@@ -171,9 +167,7 @@ class Rule_CUSTOM_L001(BaseRule):
 
 ### 4. YAML ベースのテストケース
 
-`test/rules/test_cases/custom_l001.yml`:
-
-```yaml
+```yaml:test/rules/test_cases/custom_l001.yml
 rule: CUSTOM_L001
 
 test_cross_join_fail:
@@ -189,11 +183,7 @@ test_inner_join_pass:
     INNER JOIN table2 ON table1.id = table2.id
 ```
 
-`test/rules/rule_test_cases_test.py`:
-
-```python
-"""Test cases for custom rules."""
-
+```python:test/rules/rule_test_cases_test.py
 import pytest
 from sqlfluff.utils.testing.rules import load_test_cases
 
@@ -211,9 +201,9 @@ def test_custom_l001(test_case):
 
 ### 5. GitHub Actions CI 統合
 
-プラグインのテスト用ワークフロー (`.github/workflows/test-sqlfluff-plugins.yml`):
+プラグインのテスト用ワークフロー (`.github/workflows/test-sqlfluff-plugins.yml`)
 
-```yaml
+```yaml:.github/workflows/test-sqlfluff-plugins.yml
 name: Test SQLFluff Plugins
 
 on:
@@ -241,9 +231,9 @@ jobs:
         run: pytest test/ -v
 ```
 
-SQL リント用ワークフロー (既存の `infra-precheck.yml` に統合):
+SQL リント用ワークフロー
 
-```yaml
+```yaml:.github/workflows/sql-lint.yml
 lint_sql:
   needs: changes
   if: ${{ needs.changes.outputs.sql == 'true' }}
@@ -282,7 +272,7 @@ YAML ベースのテストケースで `fail_str`（ルール違反として検�
 
 ### 1. ConfigInfo インポートエラー
 
-初期実装で `ConfigInfo` を import していましたが、SQLFluff 3.3.0 では不要でした。
+`ConfigInfo` を import していましたが、使っていないので不要でした。
 
 ```python
 # ❌ 不要なインポート
@@ -294,7 +284,7 @@ from sqlfluff.core.rules import BaseRule
 
 `get_configs_info()` は、ルールの動作を `.sqlfluff` 設定ファイルでカスタマイズできるようにしたい場合に使います。
 
-例えば「最大行数」を設定可能にする場合：
+例えば「最大行数」を設定可能にする場合
 
 ```python
 # .sqlfluff での設定例
@@ -315,9 +305,10 @@ max_lines = 100
 
 ## まとめ
 
-SQLFluff のプラグインシステムを使えば組織固有のルールを型通りに実装できます。
+SQLFluff のプラグインで組織固有の SQL リントのルールを実装できます。
 
-SQLFluff リポジトリの [sqlfluff-plugin-example](https://github.com/sqlfluff/sqlfluff/tree/main/plugins/sqlfluff-plugin-example) を見ながら実装するのが一番確実です。YAML ベースのテストで色々なケースを検証しつつ、プラグインテストと実運用リントは分けて CI に組み込むのがおすすめです。
+SQLFluff リポジトリの [sqlfluff-plugin-example](https://github.com/sqlfluff/sqlfluff/tree/main/plugins/sqlfluff-plugin-example) を見ながら実装するのが一番確実です。
+YAML ベースのテストで色々なケースを検証しつつ、プラグインテストとリント適用は分けて CI に組み込むのがおすすめです。
 
 ルールを追加したくなったら `rules.py` に新しいクラスを追加して `__init__.py` の `get_rules()` に登録するだけなので、まずは重要度の高いルールから始めてみてください。
 
