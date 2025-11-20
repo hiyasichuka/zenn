@@ -17,12 +17,8 @@ SQLFluff は BigQuery をはじめとする様々な SQL に対応したリン�
 
 ### 実装したカスタムルール
 
-今回は例として以下のルールを実装します。
-
-**CUSTOM_L001**: `CROSS JOIN` の使用禁止
-
-- 理由: 意図しない全件結合によるパフォーマンス低下を防ぐため
-- 対策: 明示的な JOIN 条件の使用を促す
+今回は `CROSS JOIN` の使用を禁止するルールを実装しました。
+意図しない全件結合によるパフォーマンス低下を防ぐため、明示的な JOIN 条件の使用を促すルールです。
 
 ## プロジェクト構造
 
@@ -58,20 +54,15 @@ include src/custom_rules/plugin_default_config.cfg
 
 **hookimpl (プラグイン登録の仕組み)**
 
-SQLFluff は [pluggy](https://pluggy.readthedocs.io/) というプラグインシステムを使用しています。`@hookimpl` デコレータを使うことで、「このメソッドは SQLFluff のプラグイン用の実装です」と宣言できます。
+SQLFluff は [pluggy](https://pluggy.readthedocs.io/) というプラグインシステムを使っています。`@hookimpl` デコレータで「このメソッドは SQLFluff のプラグイン用の実装です」と宣言します。
 
-主なフックメソッド
-
-- `get_rules()`: カスタムルールのクラスリストを返す
-- `load_default_config()`: プラグインのデフォルト設定を読み込む
-
-SQLFluff が起動時にこれらのメソッドを自動的に検出・実行し、カスタムルールが利用可能になります。
+`get_rules()` でカスタムルールのクラスリストを返し、`load_default_config()` でプラグインのデフォルト設定を読み込みます。SQLFluff が起動時にこれらを自動検出してカスタムルールが使えるようになります。
 
 ## 実装手順
 
 ### 1. プラグインパッケージの設定
 
-`pyproject.toml` でプラグインのエントリーポイントを定義します:
+`pyproject.toml` でプラグインのエントリーポイントを定義します。
 
 ```toml
 [project]
@@ -87,7 +78,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 ```
 
-`MANIFEST.in` で設定ファイルを配布対象に含めます:
+`MANIFEST.in` で設定ファイルを配布対象に含めます。
 
 ```
 include src/custom_rules/plugin_default_config.cfg
@@ -95,7 +86,7 @@ include src/custom_rules/plugin_default_config.cfg
 
 ### 2. プラグインの hook 実装
 
-`src/custom_rules/__init__.py` で SQLFluff のプラグインシステムに登録します:
+`src/custom_rules/__init__.py` で SQLFluff のプラグインシステムに登録します。
 
 ```python
 """Custom SQLFluff rules plugin."""
@@ -130,7 +121,7 @@ def load_default_config() -> dict[str, Any]:
 
 ### 3. カスタムルールの実装
 
-`src/custom_rules/rules.py` にルールロジックを実装します:
+`src/custom_rules/rules.py` にルールロジックを実装します。
 
 ```python
 """Custom SQLFluff rules."""
@@ -278,30 +269,19 @@ lint_sql:
 
 ### ルールの命名規則
 
-SQLFluff のルール命名規則に従う必要があります:
-
-- クラス名: `Rule_<PREFIX>_<CODE>` (例: `Rule_CUSTOM_L001`)
-- ルール識別子: `<prefix>.<name>` (例: `custom.no_cross_join`)
-- コード: 正規表現 `[A-Z0-9]{4}` にマッチする英数字 4 文字 (例: `L001`)
+SQLFluff のルール命名規則に従う必要があります。クラス名は `Rule_<PREFIX>_<CODE>` 形式（例: `Rule_CUSTOM_L001`）で、コードは英数字 4 文字（例: `L001`）です。ルール識別子は `<prefix>.<name>` 形式（例: `custom.no_cross_join`）になります。
 
 ### テストの重要性
 
-YAML ベースのテストケースにより、以下を検証できます:
+YAML ベースのテストケースで `fail_str`（ルール違反として検出されるべき SQL）と `pass_str`（ルールに準拠した SQL）を検証できます。
 
-- `fail_str`: ルール違反として検出されるべき SQL
-- `pass_str`: ルールに準拠した SQL
-
-最低限以下のケースをカバーすることを推奨します:
-
-1. 基本的な違反ケース
-2. 適切に対処された合格ケース
-3. ルールの対象外となるケース
+基本的な違反ケース、適切に対処された合格ケース、ルールの対象外となるケースは最低限カバーしておくと安心です。
 
 ## ハマりポイントと解決策
 
 ### 1. ConfigInfo インポートエラー
 
-初期実装で `ConfigInfo` を import していましたが、SQLFluff 3.3.0 では不要でした:
+初期実装で `ConfigInfo` を import していましたが、SQLFluff 3.3.0 では不要でした。
 
 ```python
 # ❌ 不要なインポート
@@ -311,7 +291,7 @@ from sqlfluff.core.rules import BaseRule, ConfigInfo
 from sqlfluff.core.rules import BaseRule
 ```
 
-`get_configs_info()` hook はカスタム設定が必要な場合のみ実装すればよく、今回は不要でした。
+`get_configs_info()` hook はカスタム設定が必要な場合のみ実装すればいいので、今回は不要です。
 
 ### 2. ルール命名の失敗例
 
@@ -319,21 +299,15 @@ from sqlfluff.core.rules import BaseRule
 
 ### 3. ワークフローの分離
 
-プラグインのユニットテスト (開発用) と、実際の SQL リント (品質チェック) は目的が異なるため、別ワークフローに分離しました:
-
-- `test-sqlfluff-plugins.yml`: プラグイン自体のテスト
-- `infra-precheck.yml`: SQL ファイルに対するリント
+プラグインのユニットテスト（開発用）と実際の SQL リント（品質チェック）は目的が違うので別ワークフローに分けました。`test-sqlfluff-plugins.yml` でプラグイン自体をテストし、`infra-precheck.yml` で SQL ファイルをリントします。
 
 ## まとめ
 
-SQLFluff のプラグインシステムを活用することで、組織固有のルールを型通りに実装・運用できます。重要なポイントは:
+SQLFluff のプラグインシステムを使えば組織固有のルールを型通りに実装できます。
 
-1. **公式のプラグイン例を参考にする**: SQLFluff リポジトリの `plugins/sqlfluff-plugin-example` は最良の教材
-2. **適切なテストカバレッジ**: YAML ベースのテストで様々なケースを検証
-3. **CI 統合**: プラグインテストと実運用リントを分離
-4. **段階的な導入**: まずは重要度の高いルールから実装
+SQLFluff リポジトリの [sqlfluff-plugin-example](https://github.com/sqlfluff/sqlfluff/tree/main/plugins/sqlfluff-plugin-example) を見ながら実装するのが一番確実です。YAML ベースのテストで色々なケースを検証しつつ、プラグインテストと実運用リントは分けて CI に組み込むのがおすすめです。
 
-今後、ルールを追加する場合も `rules.py` に新しいクラスを追加し、`__init__.py` の `get_rules()` に登録するだけです。
+ルールを追加したくなったら `rules.py` に新しいクラスを追加して `__init__.py` の `get_rules()` に登録するだけなので、まずは重要度の高いルールから始めてみてください。
 
 ## 参考資料
 
