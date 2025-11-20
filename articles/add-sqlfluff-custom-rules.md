@@ -8,16 +8,17 @@ published: false
 
 ## はじめに
 
-SQL の品質管理において、組織固有のルールを適用したいケースは少なくありません。本記事では、SQLFluff のカスタムルールプラグインを作成し、GitHub Actions CI に統合する方法を解説します。
+SQL の品質管理において、組織固有のルールを適用したいケースがあります。
+本記事では、SQLFluff のカスタムルールプラグインを作成し、GitHub Actions CI に統合する方法を解説します。
 
 ## 背景
 
 SQLFluff は BigQuery をはじめとする様々な SQL に対応したリンター・フォーマッターです。
 標準ルールは充実していますが、独自の SQL ルールを強制したい場合、カスタムルールが必要になります。
 
-### 実装したカスタムルール
+### 実装するカスタムルール
 
-今回は `CROSS JOIN` の使用を禁止するルールを実装しました。
+今回は `CROSS JOIN` の使用を禁止するルール (CUSTOM_L001) を実装します。
 意図しない全件結合によるパフォーマンス低下を防ぐため、明示的な JOIN 条件の使用を促すルールです。
 
 ## プロジェクト構造
@@ -291,7 +292,18 @@ from sqlfluff.core.rules import BaseRule, ConfigInfo
 from sqlfluff.core.rules import BaseRule
 ```
 
-`get_configs_info()` hook はカスタム設定が必要な場合のみ実装すればいいので、今回は不要です。
+`get_configs_info()` は、ルールの動作を `.sqlfluff` 設定ファイルでカスタマイズできるようにしたい場合に使います。
+
+例えば「最大行数」を設定可能にする場合：
+
+```python
+# .sqlfluff での設定例
+[sqlfluff:rules:custom.max_lines]
+max_lines = 100
+```
+
+こういった設定項目を読み込むために `get_configs_info()` で定義が必要になります。
+今回の CROSS JOIN 禁止ルールは設定不要で常に同じ動作をするので、`get_configs_info()` の実装は不要でした。
 
 ### 2. ルール命名の失敗例
 
