@@ -18,6 +18,7 @@ SQLFluff は BigQuery をはじめとする様々な SQL クエリに対応し�
 ### 実装したカスタムルール
 
 今回は例として以下のルールを実装します
+今回は例として以下のルールを実装します。
 
 **CUSTOM_L001**: `CROSS JOIN` の使用禁止
 
@@ -142,7 +143,7 @@ from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
 
 class Rule_CUSTOM_L001(BaseRule):
-    """CROSS JOIN の使用を禁止.
+  """CROSS JOIN の使用を禁止する。
 
     **アンチパターン**
 
@@ -164,7 +165,7 @@ class Rule_CUSTOM_L001(BaseRule):
     crawl_behaviour = SegmentSeekerCrawler({"from_clause"})
 
     def _eval(self, context: RuleContext) -> Optional[LintResult]:
-        """Evaluate."""
+    """評価処理。"""
         assert context.segment.is_type("from_clause")
 
         raw_upper = context.segment.raw.upper()
@@ -179,23 +180,24 @@ class Rule_CUSTOM_L001(BaseRule):
 
 ### 4. YAML ベースのテストケース
 
-`test/rules/test_cases/custom_l001.yml`:
+### 2. ルール命名の失敗例
 
-```yaml
-rule: CUSTOM_L001
+- コード: 正規表現 `[A-Z0-9]{4}` にマッチする英数字 4 文字 (例: `L001`)
+  rule: CUSTOM_L001
 
 test_cross_join_fail:
-  fail_str: |
-    SELECT *
-    FROM table1
-    CROSS JOIN table2
+fail_str: |
+SELECT \*
+FROM table1
+CROSS JOIN table2
 
 test_inner_join_pass:
-  pass_str: |
-    SELECT *
-    FROM table1
-    INNER JOIN table2 ON table1.id = table2.id
-```
+pass_str: |
+SELECT \*
+FROM table1
+INNER JOIN table2 ON table1.id = table2.id
+
+````
 
 `test/rules/rule_test_cases_test.py`:
 
@@ -215,7 +217,7 @@ from sqlfluff.utils.testing.rules import load_test_cases
 def test_custom_l001(test_case):
     """Test CUSTOM_L001."""
     test_case.assert_rule_pass_in_sql()
-```
+````
 
 ### 5. GitHub Actions CI 統合
 
