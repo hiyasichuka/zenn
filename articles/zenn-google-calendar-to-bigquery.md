@@ -238,22 +238,48 @@ Google Calendar API の `events.list` はデフォルトで最大 250 件、`max
 それ以上のイベントがある場合は `nextPageToken` を使ってページネーションする必要があります。
 
 ```python
-events = []
-page_token = None
+def fetch_calendar_events(credentials: Credentials) -> list[dict[str, Any]]:
+    """Google Calendar API からイベントを取得する（ページネーション対応）."""
+    service = build("calendar", "v3", credentials=credentials)
+    time_min, time_max = get_time_range()
 
-while True:
-    response = service.events().list(
-        calendarId=CALENDAR_ID,
-        pageToken=page_token,
-        maxResults=2500,
-        # ... 他のパラメータ
-    ).execute()
-    
-    events.extend(response.get("items", []))
-    page_token = response.get("nextPageToken")
-    
-    if not page_token:
-        break
+    all_events: list[dict[str, Any]] = []
+    page_token: str | None = None
+
+    while True:
+        response = (
+            service.events()
+            .list(
+                calendarId=CALENDAR_ID,
+                timeMin=time_min,
+                timeMax=time_max,
+                singleEvents=True,
+                orderBy="startTime",
+                maxResults=2500,  # 1リクエストの最大取得件数
+                pageToken=page_token,
+            )
+            .execute()
+        )
+
+        events = [
+            {
+                "event_name": event["summary"],
+                "description": event.get("description", ""),
+                "html_link": event.get("htmlLink", ""),
+                "creator_email": event.get("creator", {}).get("email", ""),
+                "start_datetime": _extract_datetime(event["start"]),
+                "end_datetime": _extract_datetime(event["end"], is_end=True),
+            }
+            for event in response.get("items", [])
+            if event.get("summary")
+        ]
+        all_events.extend(events)
+
+        page_token = response.get("nextPageToken")
+        if not page_token:
+            break
+
+    return all_events
 ```
 
 :::message
