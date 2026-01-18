@@ -40,18 +40,9 @@ JSON5 は JSON の拡張仕様で、以下のような特徴があります。
 
 # Renovate で JSON5 を使う方法
 
-Renovate は以下のファイル名を自動的に認識します。
-
-| ファイル名 | 形式 |
-|-----------|------|
-| `renovate.json` | JSON |
-| `renovate.json5` | JSON5 |
-| `.renovaterc` | JSON |
-| `.renovaterc.json` | JSON5 |
-
 
 ```json5
-// renovate.json
+// renovate.json5
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
