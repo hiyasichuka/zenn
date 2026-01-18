@@ -2,7 +2,7 @@
 title: "renovate.jsonをJSON5形式にしてコメントを書けるようにする"
 emoji: "🔧"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: ["renovate", "json5"]
+topics: ["renovate", "json5","aqua"]
 published: true
 ---
 
@@ -130,13 +130,14 @@ Renovate の設定を変更した後、すぐに反映させたい場合は **De
 
 ```json5
 {
+  // エディタでの入力補完とバリデーションを有効にするためのスキーマ定義
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",       // Renovate の推奨設定を使用
+    ":label(renovate)",         // 作成される PR に「renovate」ラベルを自動で付ける
+    "github>aquaproj/aqua-renovate-config#2.9.0",  // aqua.yaml のバージョン更新を検知するための設定
+    "github>aquaproj/aqua-renovate-config:aqua-renovate-config#2.9.0(renovate\\.json5)"  // ↑のプリセット自体のバージョン更新 PR を作成。renovate.json5 ファイル名にだけマッチさせるため、ドットをエスケープしている
   ],
-
-  // PR のラベル設定
-  "labels": ["dependencies"],
 
   // 自動マージ設定
   "packageRules": [
