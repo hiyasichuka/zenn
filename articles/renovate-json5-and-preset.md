@@ -41,8 +41,7 @@ JSON5 は JSON の拡張仕様で、以下のような特徴があります。
 # Renovate で JSON5 を使う方法
 
 
-```json5
-// renovate.json5
+```json5:renovate.json5
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
