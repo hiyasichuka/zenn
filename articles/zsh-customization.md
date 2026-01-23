@@ -29,21 +29,28 @@ macOS標準のzshを、最小限の拡張でカスタマイズします。
 brew install antidote
 ```
 
-### 2. .zshrc に設定を追加
+### 2. プラグイン設定ファイルを作成
 
-`~/.zshrc` に以下を追加します。
+以下のコマンドで `~/.zsh_plugins.txt` を作成します。
 
-```zsh
-# antidote
-source $(brew --prefix antidote)/share/antidote/antidote.zsh
-
-antidote bundle <<EOF
+```bash
+cat <<EOF > ~/.zsh_plugins.txt
 zsh-users/zsh-autosuggestions
 zsh-users/zsh-syntax-highlighting
 EOF
 ```
 
 `zsh-autosuggestions` は過去のコマンド履歴から入力候補を提案し、`zsh-syntax-highlighting` はコマンドの構文を色分けします。
+
+### 3. .zshrc に設定を追加
+
+`~/.zshrc` に以下を追加します。
+
+```zsh
+# antidote
+source $(brew --prefix)/opt/antidote/share/antidote/antidote.zsh
+antidote load
+```
 
 ---
 
