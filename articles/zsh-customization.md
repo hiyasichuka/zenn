@@ -3,7 +3,7 @@ title: "zshをカスタマイズして快適なターミナル環境を構築す
 emoji: "🐚"
 type: "tech"
 topics: ["zsh", "terminal", "starship"]
-published: false
+published: true
 ---
 
 # はじめに
