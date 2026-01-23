@@ -17,8 +17,6 @@ macOS標準のzshを、最小限の拡張でカスタマイズします。
 - macOS
 - Homebrew がインストール済み
 
----
-
 ## antidote のインストール
 
 [antidote](https://github.com/mattmc3/antidote) でzshプラグインを管理します。
@@ -52,7 +50,6 @@ source $(brew --prefix)/opt/antidote/share/antidote/antidote.zsh
 antidote load
 ```
 
----
 
 ## Starship のインストール
 
