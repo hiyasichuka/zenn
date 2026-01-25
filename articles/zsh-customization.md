@@ -70,7 +70,70 @@ brew install starship
 eval "$(starship init zsh)"
 ```
 
-### 3. その他の便利な設定
+これだけで、Starshipがデフォルト設定で動作します。
+
+### 3. 設定ファイルでカスタマイズ（オプション）
+
+デフォルトのまま使っても十分便利ですが、さらにカスタマイズしたい場合は設定ファイルを作成します。
+
+```bash
+mkdir -p ~/.config
+touch ~/.config/starship.toml
+```
+
+以下は設定例です（`~/.config/starship.toml`）：
+
+```toml
+# ~/.config/starship.toml
+
+# エディタ補完用のスキーマ設定
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# プロンプトの前に空行を挿入
+add_newline = true
+
+# プロンプトのシンボルを変更
+[character]
+success_symbol = '[➜](bold green) '
+error_symbol = '[✗](bold red) '
+
+# パッケージバージョン表示を無効化（プロンプトをシンプルに保つため）
+[package]
+disabled = true
+
+# Git ブランチの設定
+[git_branch]
+symbol = '🌱 '
+truncation_length = 4
+truncation_symbol = ''
+ignore_branches = ['master', 'main']
+
+# Git コミットハッシュの設定
+[git_commit]
+commit_hash_length = 4
+tag_symbol = '🔖 '
+
+# Git の統計情報を表示
+[git_metrics]
+added_style = 'bold blue'
+format = '[+$added]($added_style)/[-$deleted]($deleted_style) '
+
+# Git Status に絵文字を使う
+[git_status]
+conflicted = '🏳'
+ahead = '🏎💨'
+behind = '😰'
+diverged = '😵'
+up_to_date = '✓'
+untracked = '🤷'
+stashed = '📦'
+modified = '📝'
+staged = '[++\($count\)](green)'
+renamed = '👅'
+deleted = '🗑'
+```
+
+### 4. その他の便利な設定
 
 `~/.zshrc` に以下も追加します。
 
@@ -119,4 +182,7 @@ exec zsh
 ## 補足
 
 - zshの補完機能は、標準機構と各CLIツールの定義が自動的に利用されます
-- Starshipの詳細なカスタマイズは[公式ドキュメント](https://starship.rs/config/)を参照してください
+- **Starshipは設定ファイルなしでも十分便利に使えます**。デフォルト設定で満足できる場合は `starship.toml` を作る必要はありません
+- カスタマイズしたい場合は[公式ドキュメント](https://starship.rs/config/)を参照してください
+- よく使われる設定例は[Presets](https://starship.rs/presets/)で確認できます
+- 設定を変更した場合は `exec zsh` で再読み込みできます
