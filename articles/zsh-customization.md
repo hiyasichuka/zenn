@@ -31,7 +31,7 @@ brew install antidote
 
 以下のコマンドで `~/.zsh_plugins.txt` を作成します。
 
-```bash
+```bash:ターミナル
 cat <<EOF > ~/.zsh_plugins.txt
 # ディレクトリ履歴をスマートに管理
 rupa/z
@@ -64,7 +64,7 @@ EOF
 
 `~/.zshrc` に以下を追加します。
 
-```zsh
+```zsh:~/.zshrc
 # antidote
 source $(brew --prefix)/opt/antidote/share/antidote/antidote.zsh
 antidote load
@@ -89,7 +89,7 @@ brew install starship
 
 `~/.zshrc` に以下を追加します。
 
-```zsh
+```zsh:~/.zshrc
 # Starship
 eval "$(starship init zsh)"
 ```
@@ -100,7 +100,7 @@ eval "$(starship init zsh)"
 
 デフォルトのまま使っても十分便利ですが、さらにカスタマイズしたい場合は設定ファイルを作成します。
 
-```bash
+```bash:ターミナル
 mkdir -p ~/.config
 touch ~/.config/starship.toml
 ```
@@ -161,7 +161,7 @@ deleted = '🗑'
 
 `~/.zshrc` に以下も追加します。
 
-```zsh
+```zsh:~/.zshrc
 # 履歴設定
 HISTFILE=~/.zsh_history
 HISTSIZE=10000
@@ -186,9 +186,7 @@ alias ...='cd ../..'
 
 参考までに、最終的な `~/.zshrc` の全体構成は以下のようになります。
 
-```zsh
-# ~/.zshrc
-
+```zsh:~/.zshrc
 # 履歴設定
 HISTFILE=~/.zsh_history
 HISTSIZE=10000
@@ -224,7 +222,7 @@ alias ...='cd ../..'
 
 ターミナルを再起動します。
 
-```bash
+```bash:ターミナル
 exec zsh
 ```
 
@@ -256,9 +254,9 @@ exec zsh
 
 ### zコマンドの使い方
 
-`z` コマンドは、一度訪れたディレクトリを記憶し、ディレクトリ名の一部で素早く移動できます：
+`z` コマンドは、一度訪れたディレクトリを記憶し、ディレクトリ名の一部で素早く移動できます。
 
-```bash
+```bash:ターミナル
 # 最初は通常通りcdで移動（zが学習します）
 cd ~/Projects/my-project
 
@@ -272,7 +270,6 @@ z proj         # 部分一致でも移動可能
 - zshの補完機能は、標準機構と各CLIツールの定義が自動的に利用されます
 - **Starshipは設定ファイルなしでも十分便利に使えます**。デフォルト設定で満足できる場合は `starship.toml` を作る必要はありません
 - カスタマイズしたい場合は[公式ドキュメント](https://starship.rs/config/)を参照してください
-- よく使われる設定例は[Presets](https://starship.rs/presets/)で確認できます
 - 設定を変更した場合は `exec zsh` で再読み込みできます
 
 ### 参考リンク
