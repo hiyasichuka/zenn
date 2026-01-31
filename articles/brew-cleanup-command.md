@@ -3,7 +3,7 @@ title: "Homebrewの更新・掃除を1コマンドで終わらせる自作関数
 emoji: "🧹"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["homebrew", "zsh", "shell", "mac", "効率化"]
-published: false
+published: true
 ---
 
 ## はじめに
