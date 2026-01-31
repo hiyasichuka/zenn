@@ -2,8 +2,8 @@
 title: "anyenvからmiseに乗り換えて開発環境を現代化する"
 emoji: "🛠️"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: ["mise", "anyenv", "開発環境", "rust", "nodejs", "python"]
-published: false
+topics: ["mise", "anyenv", "rust", "nodejs", "python"]
+published: true
 ---
 
 ## はじめに
@@ -108,8 +108,8 @@ python = "3.11"
 
 似たような挙動をしますが、役割が異なります。
 
-- **`mise use`**: 「このバージョンを使いたい」と**宣言（設定）**するコマンドです。`.mise.toml` を書き換えます。指定したバージョンが未インストールの場合はインストールも行います。
-- **`mise install`**: `.mise.toml` に書かれたツールを**準備（インストール）**するコマンドです。設定ファイルは変更しません。
+- **`mise use`**: 使用するバージョンを固定設定するコマンドです。`.mise.toml` を書き換えます。指定したバージョンが未インストールの場合はインストールも行います。
+- **`mise install`**: `.mise.toml` に書かれたツールをインストールするコマンドです。設定ファイルは変更しません。
 
 **使い分けの例**:
 - 自分でバージョンを決めるとき → `mise use`
@@ -191,7 +191,7 @@ exec $SHELL -l
 source ~/.zshrc
 
 # または、シェルを再起動
-exec $SHELL -l
+exec $SHELL
 ```
 
 ### ツールのバージョンが切り替わらない
