@@ -9,9 +9,10 @@ jobs:
         with:
           submodules: true
       - name: textlint-github-pr-review
-        uses: tsuyoshicho/action-textlint@v3.10.0
+        uses: tsuyoshicho/action-textlint@v3
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review
           level: warning
+          fail_level: error
           textlint_flags: "articles/**"
